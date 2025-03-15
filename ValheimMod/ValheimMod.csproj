@@ -48,9 +48,6 @@
     <Reference Include="BepInEx.Harmony">
       <HintPath>..\Libraries\BepInEx.Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="BepInEx.Preloader">
-      <HintPath>..\Libraries\BepInEx.Preloader.dll</HintPath>
-    </Reference>
     <Reference Include="gui_framework">
       <HintPath>..\Libraries\gui_framework.dll</HintPath>
     </Reference>
@@ -84,7 +81,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Items\ItemManager.cs" />
     <Compile Include="Properties\IgnoreAccessModifiers.cs" />
     <Compile Include="QOL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
