@@ -7,7 +7,7 @@ Endurance scales when you use movement stamina (Run, Jump, Swim)
 
 Vitality benefits:
 - Base HP
-- Adds Base Health Regeneration that scales with level
+- Adds Base Health Regeneration that scales with level. Configurable if regen only to base HP amount as of v0.0.2
 
 Endurance benefits:
 - Base Stamina
