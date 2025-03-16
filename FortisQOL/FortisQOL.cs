@@ -19,7 +19,7 @@ public class FortisQOL : BaseUnityPlugin
 {
     const string pluginGUID = "fortis.mods.qolmod";
     const string pluginName = "FortisQOL";
-    const string pluginVersion = "0.0.1";
+    const string pluginVersion = "0.0.2";
 
     private static FortisQOL _instance;
     private static readonly int vitalitySkillId = 638;
@@ -36,6 +36,7 @@ public class FortisQOL : BaseUnityPlugin
     // Vitality Configurations
     private static ConfigEntry<int> MaxBaseHP;
     private static ConfigEntry<bool> EnableHealthRegen;
+    private static ConfigEntry<bool> EnableRegenBaseOnly;
     private static ConfigEntry<float> BaseSecondsPerRegen;
     private static ConfigEntry<float> SecondsPerRegen;
     private static ConfigEntry<float> HealthPerRegen;
@@ -139,13 +140,13 @@ public class FortisQOL : BaseUnityPlugin
         BaseRunSpeed.SettingChanged += SyncedItemConfig_SettingChanged;
         BaseSwimSpeed = CreateSyncedConfig("2 - Endurance Configurations", "BaseSwimSpeedMultiplier", 75f, new ConfigDescription("Increase of base swimming speed in percent at Endurance level 100.", new AcceptableValueRange<float>(0.01f, 100f)));
         BaseSwimSpeed.SettingChanged += SyncedItemConfig_SettingChanged;
-        StaminaRegen = CreateSyncedConfig("2 - Endurance Configurations", "StaminaRegen", 72f, new ConfigDescription("Increase of base stamina regeneration in percent at Endurance skill 100.", new AcceptableValueRange<float>(0.01f, 999f)));
+        StaminaRegen = CreateSyncedConfig("2 - Endurance Configurations", "StaminaRegen", 75f, new ConfigDescription("Increase of base stamina regeneration in percent at Endurance skill 100.", new AcceptableValueRange<float>(0.01f, 999f)));
         StaminaRegen.SettingChanged += SyncedItemConfig_SettingChanged;
         StaminaDelay = CreateSyncedConfig("2 - Endurance Configurations", "StaminaDelay", 50f, new ConfigDescription("Decrease the delay for stamina regeneration after usage in percent at Endurance skill 100.", new AcceptableValueRange<float>(0.01f, 100f)));
         StaminaDelay.SettingChanged += SyncedItemConfig_SettingChanged;
         StaminaJump = CreateSyncedConfig("2 - Endurance Configurations", "StaminaJump", 50f, new ConfigDescription("Decrease of stamina cost per jump in percent at Endurance skill 100.", new AcceptableValueRange<float>(0.01f, 100f)));
         StaminaJump.SettingChanged += SyncedItemConfig_SettingChanged;
-        StaminaSwim = CreateSyncedConfig("2 - Endurance Configurations", "StaminaSwim", 33f, new ConfigDescription("Decrease of stamina cost while swimming at Endurance skill 100.", new AcceptableValueRange<float>(0.01f, 100f)));
+        StaminaSwim = CreateSyncedConfig("2 - Endurance Configurations", "StaminaSwim", 35f, new ConfigDescription("Decrease of stamina cost while swimming at Endurance skill 100.", new AcceptableValueRange<float>(0.01f, 100f)));
         StaminaSwim.SettingChanged += SyncedItemConfig_SettingChanged;
         BaseCarryWeight = CreateSyncedConfig("2 - Endurance Configurations", "BaseCarryWeight", 300f, new ConfigDescription("The base carry weight. Game default is 300", new AcceptableValueRange<float>(1f, 10000f)));
         BaseCarryWeight.SettingChanged += SyncedItemConfig_SettingChanged;
@@ -159,6 +160,8 @@ public class FortisQOL : BaseUnityPlugin
         MaxBaseHP.SettingChanged += SyncedItemConfig_SettingChanged;
         EnableHealthRegen = CreateSyncedConfig("3 - Vitality Configurations", "EnableHealthRegen", true, new ConfigDescription("Enable base HP regen from Vitality skill"));
         EnableHealthRegen.SettingChanged += SyncedItemConfig_SettingChanged;
+        EnableRegenBaseOnly = CreateSyncedConfig("3 - Vitality Configurations", "EnableRegenBaseOnly", true, new ConfigDescription("Makes it so the health regen will only regen up to your max base health. If false, regens when health is not full"));
+        EnableRegenBaseOnly.SettingChanged += SyncedItemConfig_SettingChanged;
         BaseSecondsPerRegen = CreateSyncedConfig("3 - Vitality Configurations", "BaseSecondsPerRegen", 10f, new ConfigDescription("The time in seconds the base health regen should occur at Vitality skill level 1.", new AcceptableValueRange<float>(1f, 999f)));
         BaseSecondsPerRegen.SettingChanged += SyncedItemConfig_SettingChanged;
         SecondsPerRegen = CreateSyncedConfig("3 - Vitality Configurations", "SecondsPerRegen", 1f, new ConfigDescription("The time in seconds health regen should occur at level 100."));
@@ -468,39 +471,79 @@ public class FortisQOL : BaseUnityPlugin
 
         private static void Postfix(Player __instance, float dt)
         {
+            // Yes its ugly, no im not gonna change it now
             if (EnableHealthRegen.Value)
             {
-                if (__instance.GetHealth() < __instance.GetMaxHealth())
+                if (EnableRegenBaseOnly.Value)
                 {
-                    if (TrackRecentDamageTaken.Damaged)
+                    if (__instance.GetHealth() < ((vitalitySkillFactor * (MaxBaseHP.Value - 25)) + 25))
                     {
-                        float secondsUntilHealthRegen = BaseSecondsBeforeHealthRegen.Value - (((__instance.GetSkillFactor(VitalitySkill) * 100) - SecondsBeforeHealthRegen.Value) / (100 - SecondsBeforeHealthRegen.Value) * (BaseSecondsBeforeHealthRegen.Value - SecondsBeforeHealthRegen.Value));
-                        if (TrackRecentDamageTaken.LastAttackCounter > (secondsUntilHealthRegen * 100) / 2)
+                        if (TrackRecentDamageTaken.Damaged)
                         {
-                            DamageTimerDone = true;
-                            TrackRecentDamageTaken.Damaged = false;
+                            float secondsUntilHealthRegen = BaseSecondsBeforeHealthRegen.Value - (((__instance.GetSkillFactor(VitalitySkill) * 100) - SecondsBeforeHealthRegen.Value) / (100 - SecondsBeforeHealthRegen.Value) * (BaseSecondsBeforeHealthRegen.Value - SecondsBeforeHealthRegen.Value));
+                            if (TrackRecentDamageTaken.LastAttackCounter > (secondsUntilHealthRegen * 100) / 2)
+                            {
+                                DamageTimerDone = true;
+                                TrackRecentDamageTaken.Damaged = false;
+                            }
+                            else
+                                TrackRecentDamageTaken.LastAttackCounter++;
                         }
                         else
-                            TrackRecentDamageTaken.LastAttackCounter++;
-                    }
-                    else
-                    {
-                        if (DamageTimerDone)
                         {
-                            __instance.Heal(HealthPerRegen.Value * HealthPerRegenMultiplier.Value, true);
-                            DamageTimerDone = false;
-                            TrackRecentDamageTaken.HealthCounter = 0;
-                            return;
-                        }
+                            if (DamageTimerDone)
+                            {
+                                __instance.Heal(HealthPerRegen.Value * HealthPerRegenMultiplier.Value, true);
+                                DamageTimerDone = false;
+                                TrackRecentDamageTaken.HealthCounter = 0;
+                                return;
+                            }
 
-                        float secondsUntilHealthRegen = BaseSecondsPerRegen.Value - (((__instance.GetSkillFactor(VitalitySkill) * 100) - SecondsPerRegen.Value) / (100 - SecondsPerRegen.Value) * (BaseSecondsPerRegen.Value - SecondsPerRegen.Value));
-                        if (TrackRecentDamageTaken.HealthCounter > (secondsUntilHealthRegen * 100) / 2)
+                            float secondsUntilHealthRegen = BaseSecondsPerRegen.Value - (((__instance.GetSkillFactor(VitalitySkill) * 100) - SecondsPerRegen.Value) / (100 - SecondsPerRegen.Value) * (BaseSecondsPerRegen.Value - SecondsPerRegen.Value));
+                            if (TrackRecentDamageTaken.HealthCounter > (secondsUntilHealthRegen * 100) / 2)
+                            {
+                                __instance.Heal(HealthPerRegen.Value * HealthPerRegenMultiplier.Value, true);
+                                TrackRecentDamageTaken.HealthCounter = 0;
+                            }
+                            else
+                                TrackRecentDamageTaken.HealthCounter++;
+                        }
+                    }
+                }
+                else
+                {
+                    if (__instance.GetHealth() < __instance.GetMaxHealth())
+                    {
+                        if (TrackRecentDamageTaken.Damaged)
                         {
-                            __instance.Heal(HealthPerRegen.Value * HealthPerRegenMultiplier.Value, true);
-                            TrackRecentDamageTaken.HealthCounter = 0;
+                            float secondsUntilHealthRegen = BaseSecondsBeforeHealthRegen.Value - (((__instance.GetSkillFactor(VitalitySkill) * 100) - SecondsBeforeHealthRegen.Value) / (100 - SecondsBeforeHealthRegen.Value) * (BaseSecondsBeforeHealthRegen.Value - SecondsBeforeHealthRegen.Value));
+                            if (TrackRecentDamageTaken.LastAttackCounter > (secondsUntilHealthRegen * 100) / 2)
+                            {
+                                DamageTimerDone = true;
+                                TrackRecentDamageTaken.Damaged = false;
+                            }
+                            else
+                                TrackRecentDamageTaken.LastAttackCounter++;
                         }
                         else
-                            TrackRecentDamageTaken.HealthCounter++;
+                        {
+                            if (DamageTimerDone)
+                            {
+                                __instance.Heal(HealthPerRegen.Value * HealthPerRegenMultiplier.Value, true);
+                                DamageTimerDone = false;
+                                TrackRecentDamageTaken.HealthCounter = 0;
+                                return;
+                            }
+
+                            float secondsUntilHealthRegen = BaseSecondsPerRegen.Value - (((__instance.GetSkillFactor(VitalitySkill) * 100) - SecondsPerRegen.Value) / (100 - SecondsPerRegen.Value) * (BaseSecondsPerRegen.Value - SecondsPerRegen.Value));
+                            if (TrackRecentDamageTaken.HealthCounter > (secondsUntilHealthRegen * 100) / 2)
+                            {
+                                __instance.Heal(HealthPerRegen.Value * HealthPerRegenMultiplier.Value, true);
+                                TrackRecentDamageTaken.HealthCounter = 0;
+                            }
+                            else
+                                TrackRecentDamageTaken.HealthCounter++;
+                        }
                     }
                 }
             }

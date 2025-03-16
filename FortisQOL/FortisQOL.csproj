@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FortisQOL</RootNamespace>
     <AssemblyName>FortisQOL</AssemblyName>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
