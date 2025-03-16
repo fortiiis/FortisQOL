@@ -7,8 +7,8 @@
     <ProjectGuid>{5A4CA5E3-CCC7-40A9-B596-6C42B77A65D2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>QOL</RootNamespace>
-    <AssemblyName>QOL</AssemblyName>
+    <RootNamespace>FortisQOL</RootNamespace>
+    <AssemblyName>FortisQOL</AssemblyName>
     <Version>0.0.1</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -82,7 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\IgnoreAccessModifiers.cs" />
-    <Compile Include="QOL.cs" />
+    <Compile Include="FortisQOL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
